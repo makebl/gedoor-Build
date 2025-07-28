@@ -28,13 +28,17 @@ jobs:
           cd $APP_WORKSPACE
           git checkout $LATEST_TAG 
           echo "if_release=true" >>$GITHUB_OUTPUT
+        # 动态生成带时间的 tag 名称
+        DATE_TAG=$(date +'%Y%m%d-%H%M')
+        VERSION_TAG=legado-${LATEST_TAG}.${DATE_TAG}
+        echo "APP_UPLOAD_NAME=$VERSION_TAG" >> $GITHUB_ENV
         # fi
 
-    - name: 替换 directLinkUpload.json 文件
+    - name: 应用补丁 directLinkUpload.json
       if: steps.check_release.outputs.if_release == 'true'
       run: |
-        cp $GITHUB_WORKSPACE/diy/directLinkUpload.json $APP_WORKSPACE/app/src/main/assets/defaultData/directLinkUpload.json
-
+        cd $APP_WORKSPACE
+        patch -p1 < $GITHUB_WORKSPACE/diy/test.patch
     - name: 设置 JDK 17
       if: steps.check_release.outputs.if_release == 'true'
       uses: actions/setup-java@v4
