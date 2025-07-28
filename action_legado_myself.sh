@@ -103,3 +103,18 @@ if [[ "$APP_NAME" == "legado" ]] && [[ "$REPO_ACTOR" == "10bits" ]]; then
     my_launcher_icon;
     #quick_checkSource;
 fi
+echo "📦 替换 app/src/main/assets/defaultData/directLinkUpload.json ..."
+TARGET="$APP_WORKSPACE/app/src/main/assets/defaultData/directLinkUpload.json"
+
+cat > "$TARGET" <<EOF
+[
+  {
+    "uploadUrl": "https://sy.doubi.tk/shuyuan,{\"method\":\"POST\",\"body\": {\"file\": \"fileRequest\"},\"type\": \"multipart/form-data\"}",
+    "downloadUrlRule": "\$.data@js:if (result == '') \n '' \n else \n 'https://sy.doubi.tk/shuyuan/' + result",
+    "summary": "大灰狼直链",
+    "compress": false
+  }
+]
+EOF
+
+echo "✅ 已成功替换直链配置"
