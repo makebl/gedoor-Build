@@ -7,10 +7,6 @@ on:
         description: 'Your legado git url'      
         required: true 
         default: 'https://github.com/gedoor/legado.git'
-      git_tag:
-        description: 'Your legado git tag'      
-        required: true 
-        default: '3.23.110211'
       app_channel:
         description: 'Your legado build channel(App)'      
         required: true 
@@ -50,16 +46,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: setup JDK 17
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: 17
-        
+
     - name: setup Gradle
       uses: gradle/gradle-build-action@v2.4.2
-      
+
     - name: set env
       shell: bash
       env:
@@ -72,14 +68,17 @@ jobs:
         SECRETS_RENAME: ${{ secrets.RENAME }}
         REPO_OWNER: ${{ github.repository_owner }}
         REPO_ACTOR: ${{ github.actor }}
-        SECRETS_TAG: ${{ github.event.inputs.git_tag }}
         SECRETS_LAUNCH_NAME: ${{ github.event.inputs.app_launch_name }}
       run: source $GITHUB_WORKSPACE/action_setenv.sh
-    
-    - name: clone code
-      shell: bash
-      run: source $GITHUB_WORKSPACE/action_clone.sh
 
+    - name: clone master code
+      shell: bash
+      run: |
+        git clone --branch master $SECRETS_GIT_URL $APP_WORKSPACE
+
+    - name: 覆盖 directLinkUpload.json
+      run: |
+        cp $GITHUB_WORKSPACE/diy/directLinkUpload.json $APP_WORKSPACE/app/src/main/assets/defaultData/directLinkUpload.json
 
     - name: custom your app
       shell: bash
@@ -87,8 +86,8 @@ jobs:
         custom: ${{ github.event.inputs.app_custom }}
       run: |
         source $GITHUB_WORKSPACE/diy/$custom
-        
-    - name: build  your app
+
+    - name: build your app
       if: success()
       shell: bash
       run: |
@@ -112,4 +111,3 @@ jobs:
       run: |
         source $GITHUB_WORKSPACE/action_util.sh
         webdav_upload $APP_UPLOAD/*.apk
-        
