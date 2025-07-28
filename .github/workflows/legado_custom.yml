@@ -74,7 +74,8 @@ jobs:
     - name: clone master code
       shell: bash
       run: |
-        git clone --branch master $SECRETS_GIT_URL $APP_WORKSPACE
+       git clone --branch master $APP_GIT_URL $APP_WORKSPACE
+
 
     - name: 覆盖 directLinkUpload.json
       run: |
