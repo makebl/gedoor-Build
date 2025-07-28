@@ -34,11 +34,11 @@ jobs:
         echo "APP_UPLOAD_NAME=$VERSION_TAG" >> $GITHUB_ENV
         # fi
 
-    - name: 应用补丁 directLinkUpload.json
+    - name: 覆盖 directLinkUpload.json
       if: steps.check_release.outputs.if_release == 'true'
       run: |
-        cd $APP_WORKSPACE
-        patch -p1 < $GITHUB_WORKSPACE/diy/test.patch
+        cp $GITHUB_WORKSPACE/diy/directLinkUpload.json $APP_WORKSPACE/app/src/main/assets/defaultData/directLinkUpload.json
+
     - name: 设置 JDK 17
       if: steps.check_release.outputs.if_release == 'true'
       uses: actions/setup-java@v4
