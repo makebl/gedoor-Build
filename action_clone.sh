@@ -24,7 +24,7 @@ function init_workspace()
         exit 1
     }
 
-    set_env APP_UPLOAD_NAME "$APP_NAME-master-$(date +'%Y%m%d-%H%M')"
+    set_env APP_UPLOAD_NAME "$APP_NAME-master-$(TZ='Asia/Shanghai' date +'%Y%m%d-%H%M')"
     debug "✅ 克隆完成：$APP_UPLOAD_NAME"
 }
 
