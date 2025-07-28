@@ -14,7 +14,7 @@ on:
       app_custom:
         description: 'Your legado custom script'      
         required: true 
-        default: 'diy_test.sh'
+        default: 'action_legado_myself.sh'
       app_name: 
         description: 'Legado app name'      
         required: true 
@@ -74,8 +74,7 @@ jobs:
     - name: clone master code
       shell: bash
       run: |
-       git clone --branch master $APP_GIT_URL $APP_WORKSPACE
-
+        git clone --branch master $APP_GIT_URL $APP_WORKSPACE
 
     - name: 覆盖 directLinkUpload.json
       run: |
@@ -86,7 +85,14 @@ jobs:
       env:
         custom: ${{ github.event.inputs.app_custom }}
       run: |
-        source $GITHUB_WORKSPACE/diy/$custom
+        if [ -f "$GITHUB_WORKSPACE/diy/$custom" ]; then
+          source "$GITHUB_WORKSPACE/diy/$custom"
+        elif [ -f "$GITHUB_WORKSPACE/$custom" ]; then
+          source "$GITHUB_WORKSPACE/$custom"
+        else
+          echo "❌ 找不到脚本 $custom"
+          exit 1
+        fi
 
     - name: build your app
       if: success()
