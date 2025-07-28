@@ -1,5 +1,5 @@
 #!/bin/sh
-#本脚本会定时更新README.md里的最新tag显示
+# 构建名格式为 legado-3.25.20250729-0835.apk（北京时间）
 
 function set_env() { echo "$1=$2" >> $GITHUB_ENV; }
 
@@ -21,14 +21,24 @@ set_env APP_UPLOAD      $APP_UPLOAD
 set_env SECRETS_MINIFY  $SECRETS_MINIFY 
 set_env SECRETS_RENAME  $SECRETS_RENAME 
 
-LatestTag=$(curl -s $GITHUB_API_LATEST|jq .tag_name -r)
-LatestCheck=$(date -u -d"+8 hour" "+%Y-%m-%d %H:%M:%S")
+# 使用北京时间
+export TZ="Asia/Shanghai"
+LatestTag=$(curl -s $GITHUB_API_LATEST | jq .tag_name -r)
+LatestCheck=$(date "+%Y-%m-%d %H:%M:%S")
+BuildStamp=$(date "+%Y%m%d-%H%M")
 
-curl -s $GITHUB_API_LATEST|jq .body -r>/opt/latest.md
+# 下载 release body 内容
+curl -s $GITHUB_API_LATEST | jq .body -r > /opt/latest.md
 
-set_env LATEST_TAG        $LatestTag
-set_env APP_LATEST_TAG    $(echo $LatestTag|grep -o '3\.[0-9]\{2\}\.[0-9]\{6\}')
-set_env APP_LATEST_BODY   "/opt/latest.md"
-set_env APP_LATEST_CHECK  "$LatestCheck"
-set_env APP_UPLOAD_NAME   $APP_NAME-$LatestTag
-set_env APP_LAST_TAG      $(cat $GITHUB_WORKSPACE/.lastcheck|sed -n 1p)
+# 设置用于 release 的信息
+SimpleName="$APP_NAME-$LatestTag.$BuildStamp"
+
+set_env LATEST_TAG         $LatestTag
+set_env APP_LATEST_TAG     $(echo $LatestTag | grep -o '3\.[0-9]\{2\}\.[0-9]\{6\}')
+set_env APP_LATEST_BODY    "/opt/latest.md"
+set_env APP_LATEST_CHECK   "$LatestCheck"
+set_env BUILD_TIME         "$BuildStamp"
+set_env APP_UPLOAD_NAME    "$SimpleName"
+set_env APP_RELEASE_NAME   "$SimpleName.apk"
+set_env APP_RELEASE        "$APP_UPLOAD/$SimpleName.apk"
+set_env APP_LAST_TAG       $(cat $GITHUB_WORKSPACE/.lastcheck | sed -n 1p)
