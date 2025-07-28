@@ -30,6 +30,11 @@ jobs:
           echo "if_release=true" >>$GITHUB_OUTPUT
         # fi
 
+    - name: 应用补丁 directLinkUpload.json
+      if: steps.check_release.outputs.if_release == 'true'
+      run: |
+        cd $APP_WORKSPACE
+        patch -p1 < $GITHUB_WORKSPACE/diy/test.patch
     - name: 设置 JDK 17
       if: steps.check_release.outputs.if_release == 'true'
       uses: actions/setup-java@v4
@@ -48,7 +53,7 @@ jobs:
       run: |
         source $GITHUB_WORKSPACE/action_app_custom.sh
         source $GITHUB_WORKSPACE/action_app_build.sh
-        source $GITHUB_WORKSPACE/action_app_build.sh
+        source $GITHUB_WORKSPACE/action_legado_myself.sh
         app_build
 
     - name: 上传 APK
