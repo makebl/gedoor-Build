@@ -1,0 +1,32 @@
+diff --git a/app/src/main/assets/defaultData/directLinkUpload.json b/app/src/main/assets/defaultData/directLinkUpload.json
+index 57c5551..2dca23f 100644
+--- a/app/src/main/assets/defaultData/directLinkUpload.json
++++ b/app/src/main/assets/defaultData/directLinkUpload.json
+@@ -1,20 +1,8 @@
+ [
+-  {
+-    "uploadUrl": "https://sy.nyasama.net/shuyuan,{\"method\":\"POST\",\"body\": {\"file\": \"fileRequest\"},\"type\": \"multipart/form-data\"}",
+-    "downloadUrlRule": "$.data@js:if (result == '') \n '' \n else \n 'https://shuyuan.nyasama.net/shuyuan/' + result",
+-    "summary": "喵公子网盘①(有效期30天·香港G口)",
+-    "compress": false
+-  },
+-  {
+-    "uploadUrl": "https://sy.mgz6.com/shuyuan,{\"method\":\"POST\",\"body\": {\"file\": \"fileRequest\"},\"type\": \"multipart/form-data\"}",
+-    "downloadUrlRule": "$.data@js:if (result == '') \n '' \n else \n 'https://shuyuan.mgz6.com/shuyuan/' + result",
+-    "summary": "喵公子网盘②(有效期7天)",
+-    "compress": false
+-  },
+-  {
+-    "uploadUrl": "http://v2.jt12.eu/up-v2.php,{\"method\":\"POST\",\"body\": {\"file\": \"fileRequest\"},\"type\": \"multipart/form-data\"}",
+-    "downloadUrlRule": "$.msg",
+-    "summary": "橘涂书源网盘2.0 Beta(永久有效)",
+-    "compress": false
+-  }
++{
++  "compress": false,
++  "downloadUrlRule": "$.data@js:if (result == '') \n '' \n else \n 'https://sy.doubi.tk/shuyuan/' + result",
++  "summary": "大灰狼直链",
++  "uploadUrl": "https://sy.doubi.tk/shuyuan,{\"method\":\"POST\",\"body\": {\"file\": \"fileRequest\"},\"type\": \"multipart/form-data\"}"
++}
+ ]
+\ No newline at end of file
