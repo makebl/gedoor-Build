@@ -1,106 +1,73 @@
 #!/bin/sh
+# 本脚本用来个性化定制 app，包含签名、共存、重命名、最小化等处理
+
 source $GITHUB_WORKSPACE/action_util.sh
-#阅读3.0自用定制脚本
-function build_gradle_setting()
-{
-    debug "maven中央仓库回归"
-    sed "/google()/i\        mavenCentral()" $APP_WORKSPACE/build.gradle -i
 
-    debug "Speed Up Gradle"
-    sed -e '/android {/r '"$GITHUB_WORKSPACE/.github/legado/speedup.gradle"'' \
-        -e '/kapt {/a\  useBuildCache = true' \
-        -e '/minSdkVersion/c\        minSdkVersion 26' \
-        $APP_WORKSPACE/app/build.gradle -i
-}
-
-function bookshelfAdd_no_alert()
-{
-    debug "关闭加入书架提示"
-    find $APP_WORKSPACE/app/src -regex '.*/ReadBookActivity.kt' -exec \
-    sed -e '/fun finish()/,/fun onDestroy()/{s/alert/\/*&/;s/show()/&*\//}' \
-        -e '/!ReadBook.inBookshelf/a\viewModel.removeFromBookshelf{ super.finish() }' \
-        {} -i \;
-}
-
-function exploreShow_be_better()
-{
-    debug "发现书籍界面优化"
-    find $APP_WORKSPACE/app/src -regex '.*/ExploreShowActivity.kt' -exec \
-    sed -e "/loadMoreView.error(it)/i\isLoading = false" \
-        -e "/ExploreShowActivity/i\import io.legado.app.utils.longToastOnUi" \
-        -e '/loadMoreView.error(it)/i\longToastOnUi(it)' \
-        -e 's/loadMoreView.error(it)/loadMoreView.error("目标网站连接失败或超时")/' \
-        {} -i \;
-    find $APP_WORKSPACE/app/src -regex '.*/ExploreShowViewModel.kt' -exec \
-    sed "s/30000L/8000L/" {} -i \;
-}
-
-function explore_can_search()
-{
-    debug "发现界面支持搜索书籍"
-    find $APP_WORKSPACE/app/src -regex '.*/ExploreFragment.kt' -exec \
-    sed -e 's/getString(R.string.screen_find)/"搜索书籍、书源"/' \
-        -e '/fun initSearchView()/i\override fun onResume(){super.onResume();searchView.clearFocus()}' \
-        -e '/ExploreFragment/i\import io.legado.app.ui.book.search.SearchActivity' \
-        -e '/onQueryTextSubmit/a\if(!query?.contains("group:")!!){startActivity<SearchActivity> { putExtra("key", query) }}' \
-        {} -i \;
-}
-
-function rhino_safe_js()
-{
-    debug "safe JsExtensions.kt"
-    if version_ge "$APP_TAG" "3.21.021012"; then
-        sed -e '/^import io.legado.app.App$/c\import splitties.init.appCtx' \
-            -e 's/(App.INSTANCE)/(appCtx)/' \
-            $GITHUB_WORKSPACE/.github/fake/safe_JsExtensions.kt -i
+# 去除 18+ 限制内容
+function app_clear_18plus() {
+    if [[ "$APP_NAME" == "legado" ]]; then
+        debug "清空 18PlusList.txt"
+        echo "" > "$APP_WORKSPACE/app/src/main/assets/18PlusList.txt"
     fi
-    if version_ge "$APP_TAG" "3.21.031511"; then
-        sed "s/str.htmlFormat()/HtmlFormatter.formatKeepImg(str)/" \
-            $GITHUB_WORKSPACE/.github/fake/safe_JsExtensions.kt -i
+}
+
+# 无条件修改启动桌面名称为 APP_LAUNCH_NAME
+function app_rename() {
+    if [[ "$APP_NAME" == "legado" ]]; then
+        debug "更改桌面启动名称为 $APP_LAUNCH_NAME"
+        sed -i "s#\"app_name\">阅读#\"app_name\">$APP_LAUNCH_NAME#"             "$APP_WORKSPACE/app/src/main/res/values-zh/strings.xml"
+        debug "更改 webdav 备份路径为含后缀"
+        find "$APP_WORKSPACE/app/src" -regex '.*/storage/.*.kt' -exec             sed -i "s/\${url}legado/&$APP_SUFFIX/" {} +
     fi
-    find $APP_WORKSPACE/app/src -type d -regex '.*/app/help' -exec \
-    cp $GITHUB_WORKSPACE/.github/fake/safe_JsExtensions.kt {}/JsExtensions.kt \;
-
-    debug "开启Rhino安全沙箱,移步https://github.com/10bits/rhino-android"
-    sed "/gedoor:rhino-android/c\    implementation 'com.github.10bits:rhino-android:1.6'" \
-        $APP_WORKSPACE/app/build.gradle -i
 }
 
-function no_google_services()
-{
-    debug "删除google services相关"
-    sed -e "/com.google.firebase/d" \
-        -e "/com.google.gms/d" \
-        -e "/androidx.appcompat/a\    implementation 'androidx.documentfile:documentfile:1.0.1'" \
-        $APP_WORKSPACE/app/build.gradle -i
+# 删除不必要的资源（未启用）
+function app_resources_unuse() {
+    if [[ "$APP_NAME" == "legado" ]]; then
+        debug "删除一些用不到的资源"
+        rm -rf "$APP_WORKSPACE/app/src/main/assets/bg"
+    fi
 }
 
-function my_launcher_icon(){
-    debug "替换图标"
-    find $APP_WORKSPACE/app/src -type d -regex '.*/res/drawable' -exec \
-    cp $GITHUB_WORKSPACE/.github/legado/ic_launcher_my.xml {}/ic_launcher1.xml \;
-
-    find $APP_WORKSPACE/app/src -regex '.*/res/.*/ic_launcher.xml' -exec \
-    sed "/background/d" {} -i \;
+# 启用资源压缩以缩小 APK 体积
+function app_minify() {
+    if [[ "$APP_NAME" == "legado" ]]; then
+        debug "启用 shrinkResources 和 minifyEnabled"
+        sed -e '/minifyEnabled/i\            shrinkResources true'             -e 's/minifyEnabled false/minifyEnabled true/'             -i "$APP_WORKSPACE/app/build.gradle"
+    fi
 }
 
-function quick_checkSource(){
-    debug "快速校验书源"
-    find $APP_WORKSPACE/app/src -regex '.*/service/CheckSourceService.kt' -exec \
-    sed -e "/getBookInfoAwait/i\/*" \
-        -e "/timeout(/i\*/" \
-        -e '/exploreBookAwait/a\if(books.isEmpty()){throw Exception("发现书籍为空")}' \
-        {} -i \;
+# 支持安装共存
+function app_live_together() {
+    if [[ "$APP_NAME" == "legado" ]]; then
+        debug "处理共存包名标识"
+        sed -i "s/'.release'/'.release$APP_SUFFIX'/" "$APP_WORKSPACE/app/build.gradle"
+        sed -i "s/.release/.release$APP_SUFFIX/" "$APP_WORKSPACE/app/google-services.json"
+    fi
 }
 
-if [[ "$APP_NAME" == "legado" ]] && [[ "$REPO_ACTOR" == "10bits" ]]; then
-    exploreShow_be_better;
-    #bookshelfAdd_no_alert;
-    build_gradle_setting;
-    explore_can_search;
-    no_google_services;
-    #rhino_safe_js;
-    my_launcher_icon;
-    #quick_checkSource;
-fi
+# 签名处理
+function app_sign() {
+    debug "复制签名文件并注入 gradle.properties"
+    cp "$GITHUB_WORKSPACE/.github/legado/legado.jks" "$APP_WORKSPACE/app/legado.jks"
+    sed -i -e '$r '"$GITHUB_WORKSPACE/.github/legado/legado.sign"'' "$APP_WORKSPACE/gradle.properties"
+}
 
+# 禁用部分插件（适用于 MyBookshelf）
+function app_not_apply_plugin() {
+    if [[ "$APP_NAME" == "MyBookshelf" ]]; then
+        debug "移除 Google/Firebase 插件"
+        sed -i -e '/io.fabric/d' -e '/com.google.firebase/d' -e '/com.google.gms/d'             "$APP_WORKSPACE/app/build.gradle"
+    fi
+}
+
+# 签名
+app_sign
+
+# 压缩资源（需开启）
+[[ "$SECRETS_MINIFY" == "true" ]] && app_minify
+
+# 应用基础定制
+app_clear_18plus
+app_rename
+app_live_together
