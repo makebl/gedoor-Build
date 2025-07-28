@@ -80,8 +80,6 @@ jobs:
       shell: bash
       run: source $GITHUB_WORKSPACE/action_clone.sh
 
-    - name: 应用直链补丁
-      run: bash ./action_apply_patch.sh
 
     - name: custom your app
       shell: bash
